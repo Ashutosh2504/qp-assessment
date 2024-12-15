@@ -18,15 +18,15 @@ public class AddGrocerItemServiceImpl implements AddGroceryService {
     @Autowired
     GroceryItemsRepository groceryItemsRepository;
 
+
     @Override
     public GroceryItems addGroceryItems(GroceryItems item) {
         Optional<GroceryItems> existingItems = groceryItemsRepository.findByName(item.getName());
-        if (existingItems.isPresent()){
+        if (existingItems.isPresent()) {
             GroceryItems groceryItems = existingItems.get();
-                   groceryItems.setInventoryLevel(item.getInventoryLevel()+ groceryItems.getInventoryLevel());
+            groceryItems.setInventoryLevel(item.getInventoryLevel() + groceryItems.getInventoryLevel());
             return groceryItemsRepository.save(groceryItems);
-        }
-        else {
+        } else {
             return groceryItemsRepository.save(item);
         }
 
@@ -34,51 +34,49 @@ public class AddGrocerItemServiceImpl implements AddGroceryService {
 
     @Override
     public List<GroceryItems> allGroceryItems() {
-       List<GroceryItems> gc =  groceryItemsRepository.findAll();
-       // GroceryItems gc = GroceryItems.builder().id(1L).name("abc").price(111.0).inventoryLevel(2).build();
+        List<GroceryItems> gc = groceryItemsRepository.findAll();
+        // GroceryItems gc = GroceryItems.builder().id(1L).name("abc").price(111.0).inventoryLevel(2).build();
         return gc;
     }
 
     @Override
     public void removeGroceryItems(Long id) {
-        if (groceryItemsRepository.existsById(id)){
+        if (groceryItemsRepository.existsById(id)) {
             groceryItemsRepository.deleteById(id);
-        }
-        else{
-            throw new RuntimeException("Grocery Item with ID: "+ id+ " doesnt exists");
+        } else {
+            throw new RuntimeException("Grocery Item with ID: " + id + " doesnt exists");
         }
     }
 
     @Override
     public GroceryItems updateGroceryItems(GroceryItems item, Long id) {
         return groceryItemsRepository.findById(id).map(
-                existingItem ->{
+                existingItem -> {
                     Optional.ofNullable(item.getName()).ifPresent(existingItem::setName);
                     Optional.ofNullable(item.getPrice()).ifPresent(existingItem::setPrice);
                     Optional.ofNullable(item.getInventoryLevel()).ifPresent(existingItem::setInventoryLevel);
                     return groceryItemsRepository.save(existingItem);
                 }).orElseThrow(
-                () -> new RuntimeException("Didnt find the item with id: "+id));
+                () -> new RuntimeException("Didnt find the item with id: " + id));
     }
 
+    // adding or removing the quantity of the items
     @Override
     public GroceryItems adjustInventoryLevel(AdjustInventoryLevelRequest adjustInventoryLevelRequest) {
-        GroceryItems groceryItems =  groceryItemsRepository.findById(adjustInventoryLevelRequest.getId())
-                .orElseThrow(() -> new RuntimeException("Didnt find the item with id: "+adjustInventoryLevelRequest.getId()));
-        if (adjustInventoryLevelRequest.getOp().equalsIgnoreCase("ADD")){
+        GroceryItems groceryItems = groceryItemsRepository.findById(adjustInventoryLevelRequest.getId())
+                .orElseThrow(() -> new RuntimeException("Didnt find the item with id: " + adjustInventoryLevelRequest.getId()));
+        if (adjustInventoryLevelRequest.getOp().equalsIgnoreCase("ADD")) {
             groceryItems.setInventoryLevel(groceryItems.getInventoryLevel() + adjustInventoryLevelRequest.getQuantity());
-        }
-        else if (adjustInventoryLevelRequest.getOp().equalsIgnoreCase("REDUCE")){
-            if (groceryItems.getInventoryLevel()< adjustInventoryLevelRequest.getQuantity()){
+        } else if (adjustInventoryLevelRequest.getOp().equalsIgnoreCase("REDUCE")) { // we can create a separate enum class for constants
+            if (groceryItems.getInventoryLevel() < adjustInventoryLevelRequest.getQuantity()) {
                 throw new RuntimeException("Not sufficient level to reduce ");
             }
             groceryItems.setInventoryLevel(groceryItems.getInventoryLevel() - adjustInventoryLevelRequest.getQuantity());
 
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Use ADD or REDUCE to change the inventory level");
         }
-return         groceryItemsRepository.save(groceryItems);
+        return groceryItemsRepository.save(groceryItems);
 
     }
 
